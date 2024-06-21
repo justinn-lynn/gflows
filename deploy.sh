@@ -4,6 +4,12 @@ set -e
 
 LOG_PATH="/var/log/deploy.log"
 
+# Create the log directory if it doesn't exist
+mkdir -p /var/log
+
+# Ensure the log file exists
+touch $LOG_PATH
+
 echo "Deployment started at $(date)" >> "$LOG_PATH"
 
 cd /root/gflows_git/gflows
