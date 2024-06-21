@@ -30,7 +30,10 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          sudo apt-get update
+          sudo apt-get install -y openssh-client
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP 'cd /path/to/your/app && git pull && ./deploy.sh'
