@@ -37,6 +37,7 @@ echo "Killing existing application process..." >> "$LOG_PATH"
 fuser -k ${APP_PORT}/tcp || true
 
 echo "Starting application..." >> "$LOG_PATH"
-python3.9 app.py
+# python3.9 app.py
+nohup python3.9 app.py >> "$LOG_PATH" 2>&1 &
 
 echo "Deployment completed at $(date)" >> "$LOG_PATH"
