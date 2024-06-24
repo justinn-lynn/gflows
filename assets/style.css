@@ -176,3 +176,13 @@
 .dash-graph--pending .plotly .modebar-group {
     background-color: transparent !important;
 }
+
+.input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group > * {
+    margin: 0 0.5rem; 
+}

@@ -1,8 +1,10 @@
+import json
+
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
-from dash import Dash, html, Input, Output, ctx, no_update, State
+from dash import Dash, html, Input, Output, ctx, no_update, State, ALL
 from dash.dcc import send_data_frame
 from dash.exceptions import PreventUpdate
 
@@ -11,13 +13,14 @@ from pandas import DataFrame, concat
 from flask_caching import Cache
 from modules.calc import get_options_data
 from modules.ticker_dwn import dwn_data
-from modules.layout import serve_layout
+from modules.layout import serve_layout, generate_tabs, format_ticker
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers import cron, combining
 from datetime import timedelta
 from pytz import timezone
 from dotenv import load_dotenv
-from os import environ
+from os import environ, getenv
+from yahooquery import Ticker
 import logging
 
 load_dotenv()  # load environment variables from .env
@@ -47,7 +50,12 @@ cache = Cache(
 
 cache.clear()
 
-app.layout = serve_layout
+# app.layout = serve_layout
+# tickers = cache.get("tickers-store") or ["^SPX", "^NDX", "^RUT"]
+tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+# tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+app.layout = serve_layout(tickers)
+
 server = app.server
 
 
@@ -85,7 +93,9 @@ def cache_data(ticker, expir):
 
 def sensor(select=None):
     # default: all tickers, json format
-    dwn_data(select, is_json=True)  # False for CSV
+    # dwn_data(select, is_json=True)  # False for CSV
+    tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+    dwn_data(tickers, is_json=True)
     cache.clear()
 
 
@@ -144,7 +154,6 @@ sched.add_job(
     ),
 )
 sched.start()
-
 
 app.clientside_callback(  # toggle light or dark theme
     """ 
@@ -272,7 +281,7 @@ def on_click(btn1, btn2, btn3, btn4, active_page, value, greek):
         }
         is_active1, is_active2, is_active3, is_active4, options, value = button_map[
             ctx.triggered_id or "delta-btn"
-        ]
+            ]
 
     greek = {
         "is_active": (is_active1, is_active2, is_active3, is_active4),
@@ -306,24 +315,24 @@ def check_cache_key(n_intervals, stock, expiration, fig):
     if not data and stock and expiration:
         cache_data(stock.lower(), expiration)
     if (
-        data
-        and (fig and fig["data"])
-        and (
+            data
+            and (fig and fig["data"])
+            and (
             data["today_ddt_string"]
             and data["ticker"] == stock.lower()
             and data["ticker"].upper()
             in fig["layout"]["title"]["text"].replace("<br>", " ")
             and data["expiration"] == expiration
-        )
-        and (
+    )
+            and (
             data["today_ddt_string"]
             not in fig["layout"]["title"]["text"].replace("<br>", " ")
             or (
-                "shapes" in fig["layout"]
-                and "name" in fig["layout"]["shapes"][-1]
-                and data["spot_price"] != fig["layout"]["shapes"][-1]["x0"]
+                    "shapes" in fig["layout"]
+                    and "name" in fig["layout"]["shapes"][-1]
+                    and data["spot_price"] != fig["layout"]["shapes"][-1]["x0"]
             )
-        )
+    )
     ):  # refresh on current selection if client data differs from server cache
         return data, 0
     raise PreventUpdate
@@ -478,19 +487,19 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     retry_cache = cache.get("retry")
     if (
-        df["total_delta"].sum() == 0
-        and (not retry_cache or stock not in retry_cache)
-        and (
+            df["total_delta"].sum() == 0
+            and (not retry_cache or stock not in retry_cache)
+            and (
             expiration not in ["0dte", "opex"]
             or (
-                expiration == "0dte"
-                and today_ddt < monthly_options_dates[0] + timedelta(minutes=15)
+                    expiration == "0dte"
+                    and today_ddt < monthly_options_dates[0] + timedelta(minutes=15)
             )
             or (
-                expiration == "opex"
-                and today_ddt < monthly_options_dates[1] + timedelta(minutes=15)
+                    expiration == "opex"
+                    and today_ddt < monthly_options_dates[1] + timedelta(minutes=15)
             )
-        )
+    )
     ):
         # if data hasn't expired and total delta exposure is 0,
         # set a 'retry' for the scheduler to catch
@@ -568,7 +577,7 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     description, y_title, zeroflip = name_to_vals[name]
     yaxis.update(title_text=y_title)
-    scale = 10**9
+    scale = 10 ** 9
 
     if "Absolute" in value:
         fig = go.Figure(
@@ -816,6 +825,73 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     return fig, {}, is_pagination_hidden, monthly_options
 
+
+@app.callback(
+    [
+        Output("tickers-store", "data"),
+        Output("tabs", "children"),
+        Output("new-ticker-input", "value"),
+        Output("tabs", "active_tab")
+    ],
+    [
+        Input("add-ticker-btn", "n_clicks"),
+        Input({"type": "remove-ticker-btn", "index": ALL}, "n_clicks")
+    ],
+    [
+        State("new-ticker-input", "value"),
+        State("tickers-store", "data"),
+        State("tabs", "children")
+    ]
+)
+def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs):
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'add-ticker-btn':
+        if add_clicks and new_ticker:
+            ticker = new_ticker.strip().upper()
+            if ticker[0] != "^" and (ticker.lower() == "spx" or ticker.lower() == "ndx" or ticker.lower() == "rut"):
+                ticker = "^" + ticker
+            print('\n add', current_tickers, 'new ',ticker,'\n')
+            if ticker not in current_tickers:
+                current_tickers.append(ticker)
+                ticker_info = Ticker(current_tickers).quote_type
+
+                # Update the tabs with the new ticker
+                sensor(select=[ticker])
+                new_tabs = generate_tabs(current_tickers, ticker_info)
+
+                # return current_tickers, new_tabs, ""
+                return current_tickers, new_tabs, "", format_ticker(ticker)
+
+
+    elif triggered_id.startswith('{"index":"'):
+        triggered_dict = json.loads(triggered_id)
+
+        if 'type' in triggered_dict and triggered_dict['type'] == 'remove-ticker-btn':
+            remove_index = triggered_dict["index"]
+            if remove_index[0] != "^" and (remove_index.lower() == "spx" or remove_index.lower() == "ndx" or remove_index.lower() == "rut"):
+                remove_index = "^" + remove_index
+
+            # updated_tickers = [ticker for ticker in current_tickers if ticker != remove_index]
+            updated_tickers = [
+                "^" + ticker if ticker.lower() in ["spx", "ndx", "rut"] and not ticker.startswith("^") else ticker
+                for ticker in current_tickers 
+                if ticker != remove_index
+            ]
+            print('\n remove', updated_tickers, 'remove ',remove_index,'\n')
+
+            ticker_info = Ticker(updated_tickers).quote_type
+
+            new_tabs = generate_tabs(updated_tickers, ticker_info)
+
+            new_active_tab = format_ticker(updated_tickers[0]) if updated_tickers else None
+
+            return updated_tickers, new_tabs, "", new_active_tab
+
+    raise PreventUpdate
 
 if __name__ == "__main__":
     logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.INFO,
