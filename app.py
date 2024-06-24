@@ -52,7 +52,7 @@ cache.clear()
 
 # app.layout = serve_layout
 # tickers = cache.get("tickers-store") or ["^SPX", "^NDX", "^RUT"]
-tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
 # tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
 app.layout = serve_layout(tickers)
 
@@ -63,6 +63,7 @@ server = app.server
 def analyze_data(ticker, expir):
     # Analyze stored data of specified ticker and expiry
     # defaults: json format, timezone 'America/New_York'
+    # print(f"Analyzing data for {ticker} {expir}...")
     result = get_options_data(
         ticker,
         expir,
@@ -93,9 +94,8 @@ def cache_data(ticker, expir):
 
 def sensor(select=None):
     # default: all tickers, json format
-    # dwn_data(select, is_json=True)  # False for CSV
-    tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
-    dwn_data(tickers, is_json=True)
+    tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
+    dwn_data(tickers, is_json=True)  # False for CSV
     cache.clear()
 
 
@@ -154,6 +154,7 @@ sched.add_job(
     ),
 )
 sched.start()
+
 
 app.clientside_callback(  # toggle light or dark theme
     """ 
@@ -281,7 +282,7 @@ def on_click(btn1, btn2, btn3, btn4, active_page, value, greek):
         }
         is_active1, is_active2, is_active3, is_active4, options, value = button_map[
             ctx.triggered_id or "delta-btn"
-            ]
+        ]
 
     greek = {
         "is_active": (is_active1, is_active2, is_active3, is_active4),
@@ -315,24 +316,24 @@ def check_cache_key(n_intervals, stock, expiration, fig):
     if not data and stock and expiration:
         cache_data(stock.lower(), expiration)
     if (
-            data
-            and (fig and fig["data"])
-            and (
+        data
+        and (fig and fig["data"])
+        and (
             data["today_ddt_string"]
             and data["ticker"] == stock.lower()
             and data["ticker"].upper()
             in fig["layout"]["title"]["text"].replace("<br>", " ")
             and data["expiration"] == expiration
-    )
-            and (
+        )
+        and (
             data["today_ddt_string"]
             not in fig["layout"]["title"]["text"].replace("<br>", " ")
             or (
-                    "shapes" in fig["layout"]
-                    and "name" in fig["layout"]["shapes"][-1]
-                    and data["spot_price"] != fig["layout"]["shapes"][-1]["x0"]
+                "shapes" in fig["layout"]
+                and "name" in fig["layout"]["shapes"][-1]
+                and data["spot_price"] != fig["layout"]["shapes"][-1]["x0"]
             )
-    )
+        )
     ):  # refresh on current selection if client data differs from server cache
         return data, 0
     raise PreventUpdate
@@ -487,19 +488,19 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     retry_cache = cache.get("retry")
     if (
-            df["total_delta"].sum() == 0
-            and (not retry_cache or stock not in retry_cache)
-            and (
+        df["total_delta"].sum() == 0
+        and (not retry_cache or stock not in retry_cache)
+        and (
             expiration not in ["0dte", "opex"]
             or (
-                    expiration == "0dte"
-                    and today_ddt < monthly_options_dates[0] + timedelta(minutes=15)
+                expiration == "0dte"
+                and today_ddt < monthly_options_dates[0] + timedelta(minutes=15) 
             )
             or (
-                    expiration == "opex"
-                    and today_ddt < monthly_options_dates[1] + timedelta(minutes=15)
+                expiration == "opex"
+                and today_ddt < monthly_options_dates[1] + timedelta(minutes=15)
             )
-    )
+        )
     ):
         # if data hasn't expired and total delta exposure is 0,
         # set a 'retry' for the scheduler to catch
@@ -577,7 +578,7 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     description, y_title, zeroflip = name_to_vals[name]
     yaxis.update(title_text=y_title)
-    scale = 10 ** 9
+    scale = 10**9
 
     if "Absolute" in value:
         fig = go.Figure(
@@ -825,7 +826,6 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     return fig, {}, is_pagination_hidden, monthly_options
 
-
 @app.callback(
     [
         Output("tickers-store", "data"),
@@ -893,6 +893,6 @@ def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs)
 
 if __name__ == "__main__":
     logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.INFO,
-                        format='%(asctime)s %(levelname)s %(name)s %(message)s')
+                    format='%(asctime)s %(levelname)s %(name)s %(message)s')
     app.run(debug=False, host="0.0.0.0", port="80")
-    # app.run(debug=False, host="0.0.0.0", port="8050")
+    # app.run(debug=False, host="0.0.0.0", port="8051")
