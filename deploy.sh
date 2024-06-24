@@ -2,12 +2,14 @@
 
 set -e
 
-LOG_PATH="/var/log/deploy.log"
+# LOG_PATH="/var/log/deploy.log"
+LOG_PATH="/root/gflows_git/gflows/log/deploy.log"
 APP_PORT=80
 VENV_PATH="/root/gflows_git/gflows/venv"
 
 # Create the log directory if it doesn't exist
-mkdir -p /var/log
+# mkdir -p /var/log
+mkdir -p /root/gflows_git/gflows/log
 
 # Ensure the log file exists
 touch $LOG_PATH
@@ -35,6 +37,6 @@ echo "Killing existing application process..." >> "$LOG_PATH"
 fuser -k ${APP_PORT}/tcp || true
 
 echo "Starting application..." >> "$LOG_PATH"
-python3.9 app.py >> "$LOG_PATH" 2>&1 &
+python3.9 app.py
 
 echo "Deployment completed at $(date)" >> "$LOG_PATH"
