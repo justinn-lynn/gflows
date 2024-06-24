@@ -9,6 +9,8 @@ from functools import partial
 
 
 def fulfill_req(ticker, is_json, session):
+    if ticker[0] == "_" and ticker.lower() != "_spx" and ticker.lower() != "_ndx" and ticker.lower() != "_rut":
+        ticker = ticker[1:]
     api_url = (
         environ.get("API_URL")
         or f"https://cdn.cboe.com/api/global/delayed_quotes/options/{ticker.upper()}.json"
@@ -49,15 +51,13 @@ def fulfill_req(ticker, is_json, session):
                 print("\nrequest done for", ticker, d_format)
                 break
 
-
-def dwn_data(select, is_json):
+def dwn_data(select, is_json): #let select be a list of tickers
+    if not select:
+        select = ["^SPX", "^NDX", "^RUT"]
     pool = ThreadPool()
     print(f"\ndownload start: {datetime.now()}\n")
-    tickers_pool = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
-    if select:  # select tickers to download
-        tickers_pool = [f"^{t}" if f"^{t}" in tickers_pool else t for t in select]
     tickers_format = [
-        f"_{ticker[1:]}" if ticker[0] == "^" else ticker for ticker in tickers_pool
+        f"_{ticker[1:]}" if ticker[0] == "^" else ticker for ticker in select
     ]
     session = requests.Session()
     session.headers.update({"Accept": "application/json" if is_json else "text/csv"})
