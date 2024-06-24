@@ -7,12 +7,34 @@ from os import environ
 def format_ticker(ticker):
     return f"{ticker[1:]}" if ticker[0] == "^" else ticker
 
+def generate_tabs(tickers, ticker_info):
+    return [
+        dbc.Tab(
+            label=(
+                f"{ticker_info[ticker]['longName']} ({format_ticker(ticker)})"
+                if isinstance(ticker_info[ticker], dict)
+                else format_ticker(ticker)
+            ),
+            tab_id=format_ticker(ticker),
+            active_label_class_name="fw-bold",
+            children=[
+                dbc.Button(
+                    "Remove Ticker",
+                    id={"type": "remove-ticker-btn", "index": format_ticker(ticker)},
+                    className="mt-2",
+                )
+            ],
+        )
+        for ticker in tickers
+    ]
 
-def serve_layout():
-    tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+# def serve_layout():
+#     tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
+def serve_layout(tickers):
     ticker_info = Ticker(tickers).quote_type
     return dbc.Container(
         [
+            dcc.Store(id="tickers-store", storage_type="local", data=tickers),
             dcc.Store(
                 id="theme-store",
                 storage_type="local",
@@ -58,6 +80,35 @@ def serve_layout():
                     className="mx-auto d-flex justify-content-center",
                 )
             ),
+            #add input
+            dbc.Row([
+                dbc.Col(
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dcc.Input(
+                                    id='new-ticker-input',
+                                    type='text',
+                                    placeholder='Ticker symbol',
+                                    className='input-group'
+                                ),
+                                className='input-group'
+                            ),
+                            dbc.Col(
+                                dbc.Button(
+                                    'Add Ticker',
+                                    id='add-ticker-btn',
+                                    n_clicks=0,
+                                    className='input-group'
+                                ),
+                                className='input-group'
+                            )
+                        ],
+                        className='d-flex justify-content-center align-items-center'
+                    ),
+                    className='d-flex justify-content-center align-items-center'
+                ),
+            ], justify='center', align='center'),
             dcc.Interval(
                 id="interval", interval=1000 * 3 * 1, n_intervals=0
             ),  # every three seconds, check if chart should be refreshed
@@ -65,18 +116,7 @@ def serve_layout():
             dbc.Row(
                 dbc.Tabs(
                     id="tabs",
-                    children=[
-                        dbc.Tab(
-                            label=(
-                                f"{ticker_info[ticker]['longName']} ({format_ticker(ticker)})"
-                                if isinstance(ticker_info[ticker], dict)
-                                else format_ticker(ticker)
-                            ),
-                            tab_id=format_ticker(ticker),
-                            active_label_class_name="fw-bold",
-                        )
-                        for ticker in tickers
-                    ],
+                    children=generate_tabs(tickers, ticker_info),
                     class_name="fs-5 px-4 nav-fill",
                     persistence=True,
                     persistence_type="local",
