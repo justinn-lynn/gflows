@@ -31,13 +31,13 @@ else
     exit 1
 fi
 
-# Check for changes in the data directory
-if [ -n "$(git status --porcelain $DATA_DIR)" ]; then
-    echo "Committing changes in the data directory..." >> "$LOG_PATH"
-    git add $DATA_DIR
-    git commit -m "Update data directory before deployment"
-    git push origin main
-fi
+# # Check for changes in the data directory
+# if [ -n "$(git status --porcelain $DATA_DIR)" ]; then
+#     echo "Committing changes in the data directory..." >> "$LOG_PATH"
+#     git add $DATA_DIR
+#     git commit -m "Update data directory before deployment"
+#     git push origin main
+# fi
 
 echo "Pulling latest code from Git repository..." >> "$LOG_PATH"
 git pull origin main
