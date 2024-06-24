@@ -893,6 +893,74 @@ def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs)
 
     raise PreventUpdate
 
+
+@app.callback(
+    [
+        Output("tickers-store", "data"),
+        Output("tabs", "children"),
+        Output("new-ticker-input", "value"),
+        Output("tabs", "active_tab")
+    ],
+    [
+        Input("add-ticker-btn", "n_clicks"),
+        Input({"type": "remove-ticker-btn", "index": ALL}, "n_clicks")
+    ],
+    [
+        State("new-ticker-input", "value"),
+        State("tickers-store", "data"),
+        State("tabs", "children")
+    ]
+)
+def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs):
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if triggered_id == 'add-ticker-btn':
+        if add_clicks and new_ticker:
+            ticker = new_ticker.strip().upper()
+            if ticker[0] != "^" and (ticker.lower() == "spx" or ticker.lower() == "ndx" or ticker.lower() == "rut"):
+                ticker = "^" + ticker
+            print('\n add', current_tickers, 'new ',ticker,'\n')
+            if ticker not in current_tickers:
+                current_tickers.append(ticker)
+                ticker_info = Ticker(current_tickers).quote_type
+
+                # Update the tabs with the new ticker
+                sensor(select=[ticker])
+                new_tabs = generate_tabs(current_tickers, ticker_info)
+
+                # return current_tickers, new_tabs, ""
+                return current_tickers, new_tabs, "", format_ticker(ticker)
+
+
+    elif triggered_id.startswith('{"index":"'):
+        triggered_dict = json.loads(triggered_id)
+
+        if 'type' in triggered_dict and triggered_dict['type'] == 'remove-ticker-btn':
+            remove_index = triggered_dict["index"]
+            if remove_index[0] != "^" and (remove_index.lower() == "spx" or remove_index.lower() == "ndx" or remove_index.lower() == "rut"):
+                remove_index = "^" + remove_index
+
+            # updated_tickers = [ticker for ticker in current_tickers if ticker != remove_index]
+            updated_tickers = [
+                "^" + ticker if ticker.lower() in ["spx", "ndx", "rut"] and not ticker.startswith("^") else ticker
+                for ticker in current_tickers 
+                if ticker != remove_index
+            ]
+            print('\n remove', updated_tickers, 'remove ',remove_index,'\n')
+
+            ticker_info = Ticker(updated_tickers).quote_type
+
+            new_tabs = generate_tabs(updated_tickers, ticker_info)
+
+            new_active_tab = format_ticker(updated_tickers[0]) if updated_tickers else None
+
+            return updated_tickers, new_tabs, "", new_active_tab
+
+    raise PreventUpdate
+
 if __name__ == "__main__":
     logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(name)s %(message)s')
