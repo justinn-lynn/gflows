@@ -4,6 +4,7 @@ set -e
 
 LOG_PATH="/var/log/deploy.log"
 APP_PORT=80
+VENV_PATH="/root/gflows_git/gflows/venv"
 
 # Create the log directory if it doesn't exist
 mkdir -p /var/log
@@ -16,7 +17,13 @@ echo "Deployment started at $(date)" >> "$LOG_PATH"
 cd /root/gflows_git/gflows
 
 echo "Activating virtual environment..." >> "$LOG_PATH"
-source venv/bin/activate
+if [ -d "$VENV_PATH" ]; then
+    source "$VENV_PATH/bin/activate"
+    echo "Virtual environment activated." >> "$LOG_PATH"
+else
+    echo "Error: Virtual environment not found at $VENV_PATH" >> "$LOG_PATH"
+    exit 1
+fi
 
 echo "Pulling latest code from Git repository..." >> "$LOG_PATH"
 git pull origin main
