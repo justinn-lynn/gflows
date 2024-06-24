@@ -4,7 +4,8 @@ set -e
 
 # LOG_PATH="/var/log/deploy.log"
 LOG_PATH="/root/gflows_git/gflows/log/deploy.log"
-APP_PORT=80
+# APP_PORT=80
+APP_PORT=8050
 APP_LOG_PATH="/root/gflows_git/gflows/log/app.log"
 VENV_PATH="/root/gflows_git/gflows/venv"
 

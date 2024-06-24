@@ -818,7 +818,7 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
 
 if __name__ == "__main__":
-    # app.run(debug=False, host="0.0.0.0", port="8050")
     logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(name)s %(message)s')
-    app.run(debug=False, host="0.0.0.0", port="80")
+    # app.run(debug=False, host="0.0.0.0", port="80")
+    app.run(debug=False, host="0.0.0.0", port="8050")
