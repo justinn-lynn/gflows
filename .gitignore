@@ -117,6 +117,7 @@ dmypy.json
 data/all_exp/
 data/monthly_exp/
 *.DS_Store
+data/
 
 # Ignore SSH keys
 .ssh/
