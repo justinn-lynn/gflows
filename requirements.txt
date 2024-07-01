@@ -15,7 +15,9 @@ dateparser==1.2.0
 exchange_calendars==4.5.4
 Flask==3.0.3
 Flask-Caching==2.3.0
+frozendict==2.4.4
 gunicorn==22.0.0
+html5lib==1.1
 idna==3.7
 importlib_metadata==7.1.0
 itsdangerous==2.2.0
@@ -24,12 +26,15 @@ korean-lunar-calendar==0.3.1
 llvmlite==0.42.0
 lxml==4.9.4
 MarkupSafe==2.1.5
+multitasking==0.0.11
 nest-asyncio==1.6.0
 numba==0.59.1
 numpy==1.26.4
 orjson==3.10.3
 packaging==24.1
 pandas==2.1.4
+peewee==3.17.5
+platformdirs==4.2.2
 plotly==5.22.0
 polygon-api-client==1.13.7
 pyluach==2.2.0
@@ -50,7 +55,9 @@ typing_extensions==4.12.2
 tzdata==2024.1
 tzlocal==5.2
 urllib3==1.26.19
+webencodings==0.5.1
 websockets==12.0
 Werkzeug==3.0.3
 yahooquery==2.3.7
+yfinance==0.2.40
 zipp==3.19.2
