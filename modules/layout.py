@@ -1,8 +1,7 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from yahooquery import Ticker
-from os import environ
-
+from modules.cache_config import get_or_set_tickers
 
 def format_ticker(ticker):
     return f"{ticker[1:]}" if ticker[0] == "^" else ticker
@@ -30,11 +29,12 @@ def generate_tabs(tickers, ticker_info):
 
 # def serve_layout():
 #     tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
-def serve_layout(tickers):
+def serve_layout():
+    tickers = get_or_set_tickers()
+
     ticker_info = Ticker(tickers).quote_type
     return dbc.Container(
         [
-            dcc.Store(id="tickers-store", storage_type="local", data=tickers),
             dcc.Store(
                 id="theme-store",
                 storage_type="local",

@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from os import environ, getenv
 from yahooquery import Ticker
 import logging
+from modules.cache_config import cache, init_cache
 
 load_dotenv()  # load environment variables from .env
 
@@ -39,22 +40,18 @@ app = Dash(
     update_title=None,
 )
 
-cache = Cache(
-    app.server,
-    config={
-        "CACHE_TYPE": "FileSystemCache",
-        "CACHE_DIR": "cache",
-        "CACHE_THRESHOLD": 150,
-    },
-)
-
+init_cache(app.server)
 cache.clear()
 
 # app.layout = serve_layout
 # tickers = cache.get("tickers-store") or ["^SPX", "^NDX", "^RUT"]
-tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
+# tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
 # tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
-app.layout = serve_layout(tickers)
+
+tickers = (environ.get("TICKERS") or "COIN").strip().split(",")
+cache.set("tickers-store", tickers)
+
+app.layout = serve_layout
 
 server = app.server
 
@@ -91,13 +88,24 @@ def cache_data(ticker, expir):
         )
     return data
 
+def selective_cache_clear(keep_keys):
+    saved_data = {}
+    for key in keep_keys:
+        saved_data[key] = cache.get(key)
+    
+    cache.clear()
+
+    for key, data in saved_data.items():
+        if data is not None:
+            cache.set(key, data)
 
 def sensor(select=None):
     # default: all tickers, json format
     tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
     dwn_data(tickers, is_json=True)  # False for CSV
-    cache.clear()
-
+    # cache.clear()
+    selective_cache_clear(["tickers-store"]) # clear cache but keep tickers list
+    
 
 def check_for_retry():
     tickers = cache.get("retry")
@@ -828,7 +836,6 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
 @app.callback(
     [
-        Output("tickers-store", "data"),
         Output("tabs", "children"),
         Output("new-ticker-input", "value"),
         Output("tabs", "active_tab")
@@ -839,15 +846,15 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
     ],
     [
         State("new-ticker-input", "value"),
-        State("tickers-store", "data"),
         State("tabs", "children")
     ]
 )
-def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs):
+def manage_tickers(add_clicks, remove_clicks, new_ticker, tabs):
     if not ctx.triggered:
         raise PreventUpdate
 
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    current_tickers = cache.get("tickers-store") or []
 
     if triggered_id == 'add-ticker-btn':
         if add_clicks and new_ticker:
@@ -856,14 +863,16 @@ def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs)
                 ticker = "^" + ticker
             if ticker not in current_tickers:
                 current_tickers.append(ticker)
+                cache.set("tickers-store", current_tickers)
                 ticker_info = Ticker(current_tickers).quote_type
 
                 # Update the tabs with the new ticker
-                sensor(select=[ticker])
+                sensor(select=[ticker]) #download the new ticker data but here in sensor clear cache
                 new_tabs = generate_tabs(current_tickers, ticker_info)
+                new_active_tab = format_ticker(ticker)
 
                 # return current_tickers, new_tabs, ""
-                return current_tickers, new_tabs, "", format_ticker(ticker)
+                return new_tabs, "", new_active_tab
 
 
     elif triggered_id.startswith('{"index":"'):
@@ -881,13 +890,15 @@ def manage_tickers(add_clicks, remove_clicks, new_ticker, current_tickers, tabs)
                 if ticker != remove_index
             ]
 
+            cache.set("tickers-store", updated_tickers)
+
             ticker_info = Ticker(updated_tickers).quote_type
 
             new_tabs = generate_tabs(updated_tickers, ticker_info)
 
             new_active_tab = format_ticker(updated_tickers[0]) if updated_tickers else None
 
-            return updated_tickers, new_tabs, "", new_active_tab
+            return new_tabs, "", new_active_tab
 
     raise PreventUpdate
 
