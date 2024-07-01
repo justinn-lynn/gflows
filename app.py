@@ -320,6 +320,7 @@ def on_click(btn1, btn2, btn3, btn4, active_page, value, greek):
     State("live-chart", "figure"),
 )
 def check_cache_key(n_intervals, stock, expiration, fig):
+    print("active_tab", stock)
     data = cache.get(f"{stock.lower()}_{expiration}")
     if not data and stock and expiration:
         cache_data(stock.lower(), expiration)
@@ -834,6 +835,75 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
 
     return fig, {}, is_pagination_hidden, monthly_options
 
+# @app.callback(
+#     [
+#         Output("tabs", "children"),
+#         Output("new-ticker-input", "value"),
+#         Output("tabs", "active_tab")
+#     ],
+#     [
+#         Input("add-ticker-btn", "n_clicks"),
+#         Input({"type": "remove-ticker-btn", "index": ALL}, "n_clicks")
+#     ],
+#     [
+#         State("new-ticker-input", "value"),
+#         State("tabs", "children")
+#     ]
+# )
+# def manage_tickers(add_clicks, remove_clicks, new_ticker, tabs):
+#     if not ctx.triggered:
+#         raise PreventUpdate
+
+#     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+#     current_tickers = cache.get("tickers-store") or []
+
+#     if triggered_id == 'add-ticker-btn':
+#         if add_clicks and new_ticker:
+#             ticker = new_ticker.strip().upper()
+#             if ticker[0] != "^" and (ticker.lower() == "spx" or ticker.lower() == "ndx" or ticker.lower() == "rut"):
+#                 ticker = "^" + ticker
+#             if ticker not in current_tickers:
+#                 current_tickers.append(ticker)
+#                 cache.set("tickers-store", current_tickers)
+#                 ticker_info = Ticker(current_tickers).quote_type
+
+#                 # Update the tabs with the new ticker
+#                 sensor(select=[ticker]) #download the new ticker data but here in sensor clear cache
+#                 new_tabs = generate_tabs(current_tickers, ticker_info)
+#                 new_active_tab = format_ticker(ticker)
+
+#                 # return current_tickers, new_tabs, ""
+#                 return new_tabs, "", new_active_tab
+
+
+#     elif triggered_id.startswith('{"index":"'):
+#         triggered_dict = json.loads(triggered_id)
+
+#         if 'type' in triggered_dict and triggered_dict['type'] == 'remove-ticker-btn':
+#             remove_index = triggered_dict["index"]
+#             if remove_index[0] != "^" and (remove_index.lower() == "spx" or remove_index.lower() == "ndx" or remove_index.lower() == "rut"):
+#                 remove_index = "^" + remove_index
+
+#             # updated_tickers = [ticker for ticker in current_tickers if ticker != remove_index]
+#             updated_tickers = [
+#                 "^" + ticker if ticker.lower() in ["spx", "ndx", "rut"] and not ticker.startswith("^") else ticker
+#                 for ticker in current_tickers 
+#                 if ticker != remove_index
+#             ]
+
+#             cache.set("tickers-store", updated_tickers)
+
+#             ticker_info = Ticker(updated_tickers).quote_type
+
+#             new_tabs = generate_tabs(updated_tickers, ticker_info)
+
+#             new_active_tab = format_ticker(updated_tickers[0]) if updated_tickers else None
+
+#             return new_tabs, "", new_active_tab
+
+#     raise PreventUpdate
+
+
 @app.callback(
     [
         Output("tabs", "children"),
@@ -842,62 +912,63 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
     ],
     [
         Input("add-ticker-btn", "n_clicks"),
-        Input({"type": "remove-ticker-btn", "index": ALL}, "n_clicks")
+        Input({"type": "remove-ticker-btn", "index": ALL}, "n_clicks"),
+        Input("interval-sync", "n_intervals")
     ],
     [
         State("new-ticker-input", "value"),
         State("tabs", "children")
     ]
 )
-def manage_tickers(add_clicks, remove_clicks, new_ticker, tabs):
+def manage_tickers(add_clicks, remove_clicks, n_intervals, new_ticker, tabs):
     if not ctx.triggered:
         raise PreventUpdate
 
     triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
     current_tickers = cache.get("tickers-store") or []
 
+    # print("triggered_id",triggered_id)
+
     if triggered_id == 'add-ticker-btn':
         if add_clicks and new_ticker:
             ticker = new_ticker.strip().upper()
-            if ticker[0] != "^" and (ticker.lower() == "spx" or ticker.lower() == "ndx" or ticker.lower() == "rut"):
+            if ticker[0] != "^" and ticker.lower() in ["spx", "ndx", "rut"]:
                 ticker = "^" + ticker
             if ticker not in current_tickers:
                 current_tickers.append(ticker)
                 cache.set("tickers-store", current_tickers)
                 ticker_info = Ticker(current_tickers).quote_type
-
-                # Update the tabs with the new ticker
-                sensor(select=[ticker]) #download the new ticker data but here in sensor clear cache
+                sensor(select=[ticker])
                 new_tabs = generate_tabs(current_tickers, ticker_info)
                 new_active_tab = format_ticker(ticker)
-
-                # return current_tickers, new_tabs, ""
                 return new_tabs, "", new_active_tab
-
 
     elif triggered_id.startswith('{"index":"'):
         triggered_dict = json.loads(triggered_id)
-
         if 'type' in triggered_dict and triggered_dict['type'] == 'remove-ticker-btn':
             remove_index = triggered_dict["index"]
-            if remove_index[0] != "^" and (remove_index.lower() == "spx" or remove_index.lower() == "ndx" or remove_index.lower() == "rut"):
+            if remove_index[0] != "^" and remove_index.lower() in ["spx", "ndx", "rut"]:
                 remove_index = "^" + remove_index
-
-            # updated_tickers = [ticker for ticker in current_tickers if ticker != remove_index]
             updated_tickers = [
                 "^" + ticker if ticker.lower() in ["spx", "ndx", "rut"] and not ticker.startswith("^") else ticker
                 for ticker in current_tickers 
                 if ticker != remove_index
             ]
-
             cache.set("tickers-store", updated_tickers)
-
             ticker_info = Ticker(updated_tickers).quote_type
-
             new_tabs = generate_tabs(updated_tickers, ticker_info)
-
             new_active_tab = format_ticker(updated_tickers[0]) if updated_tickers else None
+            return new_tabs, "", new_active_tab
 
+    # Check for updates from server cache every 5 seconds
+    elif triggered_id == 'interval-sync':
+        server_tickers = cache.get("tickers-store") or []
+        client_tickers = [tab['props']['tab_id'] for tab in tabs]
+        
+        if set(server_tickers) != set(client_tickers):
+            ticker_info = Ticker(server_tickers).quote_type
+            new_tabs = generate_tabs(server_tickers, ticker_info)
+            new_active_tab = tabs[0]['props']['tab_id'] if tabs else (server_tickers[0] if server_tickers else None)
             return new_tabs, "", new_active_tab
 
     raise PreventUpdate

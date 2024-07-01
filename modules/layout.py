@@ -113,6 +113,11 @@ def serve_layout():
                 id="interval", interval=1000 * 3 * 1, n_intervals=0
             ),  # every three seconds, check if chart should be refreshed
             dcc.Store(id="refresh", storage_type="local"),
+            dcc.Interval(
+                id="interval-sync",
+                interval=5000,  # every 5 seconds
+                n_intervals=0,
+            ),
             dbc.Row(
                 dbc.Tabs(
                     id="tabs",
