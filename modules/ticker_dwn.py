@@ -135,12 +135,12 @@ def fulfill_req(ticker, is_json):
 
 def dwn_data(select, is_json):
     if not select:
-        select = ["COIN"]
+        select = ["SPY,QQQ,NVDA,SMCI"]
     pool = ThreadPool()
     print(f"\ndownload start: {datetime.now()}\n")
     # print("Environment TICKERS:", environ.get("TICKERS"))
 
-    tickers_pool = (environ.get("TICKERS") or "COIN").strip().split(",")
+    tickers_pool = (environ.get("TICKERS") or "SPY,QQQ,NVDA,SMCI").strip().split(",")
     if select:  # select tickers to download
         tickers_pool = [f"^{t}" if f"^{t}" in tickers_pool else t for t in select]
     tickers_format = [

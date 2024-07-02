@@ -48,7 +48,7 @@ cache.clear()
 # tickers = cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
 # tickers = (environ.get("TICKERS") or "^SPX,^NDX,^RUT").strip().split(",")
 
-tickers = (environ.get("TICKERS") or "COIN").strip().split(",")
+tickers = (environ.get("TICKERS") or "SPY,QQQ,NVDA,SMCI").strip().split(",")
 cache.set("tickers-store", tickers)
 
 app.layout = serve_layout
@@ -101,7 +101,7 @@ def selective_cache_clear(keep_keys):
 
 def sensor(select=None):
     # default: all tickers, json format
-    tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "COIN").strip().split(",")
+    tickers = select or cache.get("tickers-store") or (environ.get("TICKERS") or "SPY,QQQ,NVDA,SMCI").strip().split(",")
     dwn_data(tickers, is_json=True)  # False for CSV
     # cache.clear()
     selective_cache_clear(["tickers-store"]) # clear cache but keep tickers list

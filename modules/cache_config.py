@@ -16,7 +16,7 @@ def get_or_set_tickers():
     tickers = cache.get("tickers-store")
     
     if tickers is None:
-        tickers = (environ.get("TICKERS") or "COIN").strip().split(",")
+        tickers = (environ.get("TICKERS") or "SPY,QQQ,NVDA,SMCI").strip().split(",")
         cache.set("tickers-store", tickers)
         
     return tickers
