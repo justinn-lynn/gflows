@@ -19,5 +19,4 @@ def get_or_set_tickers():
         tickers = (environ.get("TICKERS") or "COIN").strip().split(",")
         cache.set("tickers-store", tickers)
         
-    print("here tickers are", tickers)
     return tickers

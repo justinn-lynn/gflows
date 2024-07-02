@@ -22,11 +22,16 @@ def fetch_datetime():
     return current_utc_time
 
 def fetch_current_price(ticker):
-
     ticker_data = yf.Ticker(ticker)
-    current_price = ticker_data.info['currentPrice']
-    
-    return current_price
+    try:
+        current_price = ticker_data.info['currentPrice']
+        return current_price
+    except KeyError:
+        print("Failed to retrieve 'currentPrice'. Available data:", ticker_data.info)
+        return None
+    except Exception as e:
+        print(f"Error while fetching data for {ticker}: {e}")
+        return None
 
 
 def fetch_options_data(client, ticker):
