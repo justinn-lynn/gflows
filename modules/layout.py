@@ -10,7 +10,8 @@ def generate_tabs(tickers, ticker_info):
     return [
         dbc.Tab(
             label=(
-                f"{ticker_info[ticker]['longName']} ({format_ticker(ticker)})"
+                # f"{ticker_info[ticker]['longName']} ({format_ticker(ticker)})"
+                f"{format_ticker(ticker)}"
                 if isinstance(ticker_info[ticker], dict)
                 else format_ticker(ticker)
             ),
