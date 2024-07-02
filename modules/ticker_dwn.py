@@ -21,18 +21,29 @@ def fetch_datetime():
 
     return current_utc_time
 
+# def fetch_current_price(ticker):
+#     ticker_data = yf.Ticker(ticker)
+#     try:
+#         current_price = ticker_data.info['currentPrice']
+#         return current_price
+#     except KeyError:
+#         print("Failed to retrieve 'currentPrice'. Available data:", ticker_data.info)
+#         return None
+#     except Exception as e:
+#         print(f"Error while fetching data for {ticker}: {e}")
+#         return None
+
 def fetch_current_price(ticker):
     ticker_data = yf.Ticker(ticker)
-    try:
-        current_price = ticker_data.info['currentPrice']
-        return current_price
-    except KeyError:
-        print("Failed to retrieve 'currentPrice'. Available data:", ticker_data.info)
-        return None
-    except Exception as e:
-        print(f"Error while fetching data for {ticker}: {e}")
-        return None
+    price_keys = ['currentPrice', 'navPrice', 'regularMarketPrice', 'open', 'bid', 'ask', 'previousClose']
 
+    info = ticker_data.info
+    for key in price_keys:
+        if key in info and info[key] is not None:
+            return info[key]
+
+    print(f"Failed to retrieve a valid price. Available data for {ticker}: {info}")
+    return None
 
 def fetch_options_data(client, ticker):
     ny_tz = pytz.timezone('America/New_York')
