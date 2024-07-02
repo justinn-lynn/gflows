@@ -973,8 +973,12 @@ def manage_tickers(add_clicks, remove_clicks, n_intervals, new_ticker, tabs):
 
     raise PreventUpdate
 
-if __name__ == "__main__":
-    logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.WARNING,
+logging.basicConfig(filename='/root/gflows_git/gflows/log/app.log', level=logging.WARNING,
                     format='%(asctime)s %(levelname)s %(name)s %(message)s')
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.WARNING) 
+
+if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port="80")
     # app.run(debug=False, host="0.0.0.0", port="8051")
