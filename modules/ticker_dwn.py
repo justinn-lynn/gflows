@@ -39,8 +39,10 @@ def fetch_options_data(client, ticker):
         for o in client.list_snapshot_options_chain(
             ticker,
             params={
-                "expiration_date.gte": today_ny,  
+                "expiration_date.gte": today_ny,
+                "limit": 250
             },
+            
         ):
             options_chain.append(o)
     except Exception as e:
