@@ -936,9 +936,9 @@ def manage_tickers(add_clicks, remove_clicks, n_intervals, new_ticker, tabs):
                 ticker = "^" + ticker
             if ticker not in current_tickers:
                 current_tickers.append(ticker)
-                cache.set("tickers-store", current_tickers)
                 ticker_info = Ticker(current_tickers).quote_type
                 sensor(select=[ticker])
+                cache.set("tickers-store", current_tickers)
                 new_tabs = generate_tabs(current_tickers, ticker_info)
                 new_active_tab = format_ticker(ticker)
                 return new_tabs, "", new_active_tab
