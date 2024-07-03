@@ -94,7 +94,8 @@ def fetch_options_data(client, ticker):
         return pd.DataFrame()
  
 def fulfill_req(ticker, is_json):
-    client = RESTClient(api_key="q0TtwNDqD1yz2pnD96HDLOBTMSKVh2Zl")
+    api_key = environ.get("POLYGON_API_KEY")
+    client = RESTClient(api_key)
 
     # latest_close_price, timestamp_ms = fetch_aggs_data(ticker, client)
     timestamp_ms = fetch_datetime()
