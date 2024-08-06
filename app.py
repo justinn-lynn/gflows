@@ -133,10 +133,10 @@ sched.add_job(
     combining.OrTrigger(
         [
             cron.CronTrigger.from_crontab(
-                "0,15,30,45 9-15 * * 0-4", timezone=timezone("America/New_York")
+                "0,10,20,30,40,50 9-15 * * 0-4", timezone=timezone("America/New_York")
             ),
             cron.CronTrigger.from_crontab(
-                "0,15,30 16 * * 0-4", timezone=timezone("America/New_York")
+                "0,10,20,30,40,50 16 * * 0-4", timezone=timezone("America/New_York")
             ),
         ]
     ),
@@ -502,11 +502,11 @@ def update_live_chart(value, stock, expiration, active_page, refresh, toggle_dar
             expiration not in ["0dte", "opex"]
             or (
                 expiration == "0dte"
-                and today_ddt < monthly_options_dates[0] + timedelta(minutes=15) 
+                and today_ddt < monthly_options_dates[0] + timedelta(minutes=10) 
             )
             or (
                 expiration == "opex"
-                and today_ddt < monthly_options_dates[1] + timedelta(minutes=15)
+                and today_ddt < monthly_options_dates[1] + timedelta(minutes=10)
             )
         )
     ):
