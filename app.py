@@ -320,7 +320,6 @@ def on_click(btn1, btn2, btn3, btn4, active_page, value, greek):
     State("live-chart", "figure"),
 )
 def check_cache_key(n_intervals, stock, expiration, fig):
-    print("active_tab", stock)
     data = cache.get(f"{stock.lower()}_{expiration}")
     if not data and stock and expiration:
         cache_data(stock.lower(), expiration)
