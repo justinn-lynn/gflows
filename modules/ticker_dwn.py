@@ -34,15 +34,17 @@ def fetch_datetime():
 #         return None
 
 def fetch_current_price(ticker):
-    ticker_data = yf.Ticker(ticker)
-    price_keys = ['currentPrice', 'navPrice', 'regularMarketPrice', 'open', 'bid', 'ask', 'previousClose']
+    try:
+        ticker_data = yf.Ticker(ticker)
+        info = ticker_data.info
+        price_keys = ['currentPrice', 'navPrice', 'regularMarketPrice', 'open', 'bid', 'ask', 'previousClose']
 
-    info = ticker_data.info
-    for key in price_keys:
-        if key in info and info[key] is not None:
-            return info[key]
-
-    print(f"Failed to retrieve a valid price. Available data for {ticker}: {info}")
+        for key in price_keys:
+            if key in info and info[key] is not None:
+                return info[key]
+        print(f"Failed to retrieve a valid price. Available data for {ticker}: {info}")
+    except Exception as e:
+        print(f"Error fetching data for {ticker}: {e}")
     return None
 
 def fetch_options_data(client, ticker):
