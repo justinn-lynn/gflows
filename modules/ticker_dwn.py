@@ -21,31 +21,11 @@ def fetch_datetime():
 
     return current_utc_time
 
-# def fetch_current_price(ticker):
-#     ticker_data = yf.Ticker(ticker)
-#     try:
-#         current_price = ticker_data.info['currentPrice']
-#         return current_price
-#     except KeyError:
-#         print("Failed to retrieve 'currentPrice'. Available data:", ticker_data.info)
-#         return None
-#     except Exception as e:
-#         print(f"Error while fetching data for {ticker}: {e}")
-#         return None
 
-def fetch_current_price(ticker):
-    try:
-        ticker_data = yf.Ticker(ticker)
-        info = ticker_data.info
-        price_keys = ['currentPrice', 'navPrice', 'regularMarketPrice', 'open', 'bid', 'ask', 'previousClose']
-
-        for key in price_keys:
-            if key in info and info[key] is not None:
-                return info[key]
-        print(f"Failed to retrieve a valid price. Available data for {ticker}: {info}")
-    except Exception as e:
-        print(f"Error fetching data for {ticker}: {e}")
-    return None
+def fetch_current_price(client, ticker):
+    last_trade = client.get_last_trade(ticker)
+    return last_trade.price
+ 
 
 def fetch_options_data(client, ticker):
     ny_tz = pytz.timezone('America/New_York')
@@ -101,7 +81,7 @@ def fulfill_req(ticker, is_json):
 
     # latest_close_price, timestamp_ms = fetch_aggs_data(ticker, client)
     timestamp_ms = fetch_datetime()
-    latest_close_price = fetch_current_price(ticker)
+    last_trade_price = fetch_current_price(client, ticker)
 
     c_df = fetch_options_data(client, ticker)
 
@@ -119,10 +99,10 @@ def fulfill_req(ticker, is_json):
     
     if is_json:
         with open(filename, "w", encoding="utf-8") as f:
-            # Prepare data with separate fields for DataFrame and latest_close_price
+            # Prepare data with separate fields for DataFrame and last_trade_price
             full_data = {
                 "options_data": c_df.to_dict(orient="records"),
-                "latest_close_price": latest_close_price,
+                "last_trade_price": last_trade_price,
                 "timestamp": timestamp_ms
             }
             # Serialize the full data as JSON and write it to the file

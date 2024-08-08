@@ -582,7 +582,7 @@ def get_options_data_json(ticker, expir, tz):
     # Get Spot 
     # api_change here -> close price recently
     # spot_price = data["data.current_price"][0].astype(float)
-    spot_price = data["latest_close_price"][0].astype(float)
+    spot_price = data["last_trade_price"][0].astype(float)
 
     # Get Today's Date
     # api_change here  timezone utc-> tz
